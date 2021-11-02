@@ -1,4 +1,7 @@
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain} = require('electron')
+
+const path = require('path')
+const fs = require('fs')
 
 require('@electron/remote/main').initialize()
 
@@ -8,7 +11,10 @@ function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            enableRemoteModule: true
+            contextIsolation: false,
+            nodeIntegration: false, //best practice to NOT enable this
+            enableRemoteModule: true,
+            preload: path.join(__dirname + '/preload.js')
         }
     })
 
@@ -17,6 +23,15 @@ function createWindow() {
 
 
 app.on('ready', createWindow)
+
+ipcMain.on("toMain", (event, args) => {
+    fs.readFile("path/to/file", (error, data) => {
+        // Do something with file contents
+
+        // Send result back to renderer process
+        win.webContents.send("fromMain", responseObj);
+    });
+});
 
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
